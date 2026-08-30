@@ -85,6 +85,23 @@ qtposter は Markdown の書き方を決める薄い層だけを持つ** (2026-0
 枠の手直しが残るため採らない．非対称が要る箇所は Typst 素の `grid` (`colspan`/`rowspan`) で足す．
 
 - **【要判断】acposter (pandoc+Chrome) との棲み分け**．どちらを主にするかは未決．
+- **【点検 2026-08-31】acposter と比べて足りないもの** (実際に組んで確かめた．
+  検証用の qmd は残していない)．
+  1. **`::: row` (画像の横並び)** が無い．書いても縦に並ぶ．
+  2. **`{.full}` (全幅の箱)** が無い．書いても効かず，ふつうの箱になる．
+     `grid:` を使えば `w:` で同じことができる．
+  3. **画像の救済**が無い．`!` を付け忘れた `[説明](図.png)` はただの文字列になる
+     (acposter は拡張子を見て画像に直す)．
+  4. **画像の高さの上限** (acposter の `--fig-max-h: 30vh` 相当) が無い．
+  5. **検算が無い**．acposter はページ数・用紙実寸・箱の数・埋め込みフォントを表示するが，
+     qtposter は `quarto render` 任せ．
+  6. **表の体裁**が pandoc 既定の全罫線．acposter・ggposter は booktabs 調．
+  7. **見本が2本** (acposter は4本)．
+  8. **CI が無い** (acposter は GitHub Actions で Mac/Linux のビルドを確かめている)．
+  - 動くことを確かめたもの: 表・箇条書き (入れ子も)・コードブロック (色つき)・
+    画像・数式・`{.break}`・`grid:`・副題・ロゴ・差し色．
+  - **向き (`orientation`) は仕様上できない** (peace-of-posters の layout-a0 が縦固定，
+    かつ Quarto の予約キー)．
 - **【決定 2026-08-31】独立リポジトリにした** (ユーザ確定)．`git init` ＋ GitHub `matutosi/qtposter` (Private)．
   親リポジトリは許可制の `.gitignore` なので，親からは追跡されない．
 - 次の一手の候補: 非対称配置 (`grid` の `rowspan`) を md から書けるようにする，
