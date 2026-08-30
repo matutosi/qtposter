@@ -1,0 +1,8 @@
+# Quarto が残す中間ファイル
+/.quarto/
+*.typ
+!_extensions/**/*.typ
+
+# OS
+Thumbs.db
+.DS_Store
