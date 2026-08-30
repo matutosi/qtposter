@@ -14,6 +14,7 @@ quarto render poster.qmd
 
 ```yaml
 title: "半自然草原の植生と管理"
+subtitle: "管理の頻度と種組成"   # 省略可
 author: ["松村 俊和"]
 institute: "所属機関名"
 paper: "a0"      # 用紙
@@ -21,6 +22,8 @@ columns: 3       # 段数
 font: "Yu Gothic"
 font-size: 32pt
 note: "植生学会第30回大会"
+logo: images/logo.png    # 省略可．表題帯の右に入る
+accent: "#1a7a3c"        # 省略可．見出し帯の色 (既定は uni-fr の紺)
 format: qtposter-typst
 ```
 
@@ -38,6 +41,9 @@ format: qtposter-typst
 | 段数 | `columns` | `cols` |
 | 文字サイズ | `font-size` | `font_size`・`size` |
 | 用紙 | `paper` | (無し) |
+| 副題 | `subtitle` | (無し) |
+| ロゴ | `logo` | (無し) |
+| 差し色 | `accent` | (無し) |
 
 **`size` を正にしない**のは，ggposter が `size` を**用紙**の意味で使っているため．
 qtposter が元から使っていた `size` (文字サイズ) は別名として引き続き通る．
@@ -46,8 +52,9 @@ qtposter が元から使っていた `size` (文字サイズ) は別名として
 `orientation` は Quarto 自身が予約していて (値は `rows`/`columns`)，
 `landscape` と書くと Quarto の YAML 検証がフィルタより先に弾く．
 
-**箱の配置を座標で決める `grid:` は qtposter には無い** (ggposter と acposter にはあり，
-両者で同じ書式)．qtposter で段の切れ目を決めるのは `{.break}` だけ．
+**箱の配置を座標で決める `grid:` は3つとも同じ書式**で書ける
+(qtposter は 2026-08-31 に対応．下の「非対称な配置」を見る)．
+`grid:` を書かないときの段の切れ目は `{.break}` で決める．
 3つの比較は `todo/.claude/notes/poster_tools.md` にある．
 
 ## 書き方の約束
@@ -57,6 +64,43 @@ qtposter が元から使っていた `size` (文字サイズ) は別名として
   Typst の `columns` は「あふれたら次の段」なので，**A4 換算で余裕のある A0 では自動で分かれない**．
   段の切れ目は書き手が決める．
 - **画像の幅は既定で段幅いっぱい**になる．`![図](a.png){width=60%}` と書けばその指定が優先される．
+
+## 非対称な配置 (`grid:`)
+
+段組みの流し込みではなく，**箱の位置を座標で決めたい**ときは `grid:` を書く．
+**acposter・ggposter とまったく同じ書式**なので，配置ごと移し替えられる．
+
+```yaml
+grid:
+  columns: 3
+  boxes:
+    - {name: はじめに, x: 0, y: 0, w: 2}   # 左2列ぶんの幅
+    - {name: 結果一覧, x: 2, y: 0, h: 3}   # 右列で3行ぶんの高さ
+    - {name: 方法,     x: 0, y: 1}
+    - {name: 調査地,   x: 1, y: 1}
+    - {name: まとめ,   x: 0, y: 2, w: 2}
+validate-yaml: false
+```
+
+- `x`・`y` は **0 から数える**．`w`・`h` を省くと 1．
+- **`validate-yaml: false` が要る**．`grid` は **Quarto 自身が予約しているキー**
+  (HTML 版面の `sidebar-width` などを書くもの) なので，これを付けないと
+  Quarto の YAML 検証がフィルタより先に弾く．**キー名を変えると3つのツールで
+  揃わなくなる**ので，検証を切るほうを採った．
+- 書き間違い (重なり・右へのはみ出し・本文の見出しと `boxes` の食い違い) は
+  **名指しでエラーにして止める**．
+- `{.break}` は `grid:` を使うときは効かない (配置は `grid:` が決める)．警告が出る．
+- 見本は [`poster_grid.qmd`](poster_grid.qmd)．
+
+### 仕組み (Typst 0.10 での制約)
+
+**Quarto 1.4 が同梱する Typst は 0.10 で，`grid.cell` が無い**ため，
+colspan/rowspan をそのまま書けない (`error: function grid does not contain field cell`)．
+そこで qtposter は**ギロチン分割**する — 箱をまたがない縦の切れ目を探して
+`#grid` の2列に分け，無ければ横の切れ目で上下に分け，これを再帰する．
+ポスターの配置はほぼこれで表せる．**縦にも横にも切れ目が無い配置だけは組めない**ので，
+そのときは箱の名前を挙げてエラーにする．
+Quarto を上げて Typst 0.11 以降になれば，`grid.cell` の素直な対応に置き換えてよい．
 
 ## 中身を見たいとき
 
@@ -71,5 +115,6 @@ pandoc が作った `poster.typ` が残る (acposter の `-KeepHtml` にあた�
 | `_extensions/qtposter/typst-template.typ` | peace-of-posters を呼ぶ関数 (`qtposter`) |
 | `_extensions/qtposter/typst-show.typ` | YAML を関数の引数へ渡す |
 | `_extensions/qtposter/boxes.lua` | `# 見出し` → 箱，`{.break}` → 段送り，画像の幅の既定値，ヘッダーのキー名の別名 |
-| `poster.qmd` | 検証用の見本 |
+| `poster.qmd` | 検証用の見本 (段組みの流し込み) |
+| `poster_grid.qmd` | 検証用の見本 (`grid:` の非対称な配置・副題・差し色) |
 | `images/` | 見本が使う仮の画像 |

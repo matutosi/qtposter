@@ -26,6 +26,28 @@ qtposter は Markdown の書き方を決める薄い層だけを持つ** (2026-0
 
 ### 現在の状態
 
+- 2026-08-31 09:40 (このセッション，x280-home)
+  **`grid:` (座標で配置) と `subtitle`・`logo`・`accent` に対応した** (ユーザ指示の5・6)．
+  - **Quarto 1.4 が同梱する Typst は 0.10 で `grid.cell` が無い**ことが分かった
+    (実機で確認．`error: function grid does not contain field cell`)．
+    colspan/rowspan が書けないので，**ギロチン分割**で組む — 箱をまたがない縦の
+    切れ目を探して `#grid` の2列に分け，無ければ横の切れ目で上下に分け，再帰する．
+    切れ目が1つも無い配置だけは組めないので，箱の名前を挙げてエラーにする．
+    **Quarto を上げて Typst 0.11 以降になれば `grid.cell` の素直な対応に置き換えてよい**．
+  - **`grid` も Quarto の予約キーだった** (`orientation` と同種)．
+    `validate-yaml: false` を書けば通る．**キー名を変えると3つで揃わなくなる**ので，
+    検証を切るほうを採った (README に明記)．
+  - **差し色は `#` を落として渡す**．Typst の writer が補間した `#` を逃がすため，
+    `rgb("#1a7a3c")` がそのままでは通らない
+    (`error: color string contains non-hexadecimal letters`)．
+    `boxes.lua` で先頭の `#` を落とし，`typst-show.typ` で `rgb("#" + "...")` と組む．
+  - `subtitle`・`logo` は peace-of-posters の `title-box` の `subtitle:`・`image:` に渡す．
+    差し色は `pop.update-theme(heading-box-args: ...)` で見出し帯だけ差し替える．
+  - **検証**: 見本 `poster_grid.qmd` を新設し，PNG に起こして目視確認
+    (はじめに=左2列，方法|調査地=横並び，まとめ=左2列，結果一覧=右列3行ぶん)．
+    ロゴ・差し色も別途目視確認．書き間違い (重なり・名前の食い違い) が
+    名指しで止まることも確認．`poster.qmd` は 397,349 bytes のまま変わらず．
+
 - 2026-08-31 06:30 (このセッション，x280-home)
   **ggposter・acposter とヘッダーのキー名を揃えた** (ユーザ確定の 1・2・c)．
   3系統の比較は `todo/.claude/notes/poster_tools.md` にある．
