@@ -67,14 +67,14 @@ end
 --       - {name: INTRO, x: 0, y: 0, w: 2}
 --       - {name: TALL,  x: 2, y: 0, h: 3}
 --
--- **Quarto 1.4 が同梱する Typst 0.10 には `grid.cell` が無い**ので，
--- colspan/rowspan をそのまま書けない (2026-08-31 に実機で確認．
--- `error: function grid does not contain field cell`)．
--- そこで**ギロチン分割**する: 箱をまたがない縦の切れ目を探して `#grid` の2列に分け，
--- 無ければ横の切れ目で上下に分け，これを再帰する．
--- ポスターの配置はほぼこれで表せる (切れ目が1つも無い配置だけは組めないので，
--- そのときは名指しでエラーにする)．Quarto を上げて Typst 0.11 以降になれば，
--- `grid.cell` の素直な対応に置き換えてよい．
+-- 座標は `grid.cell(x:, y:, colspan:, rowspan:)` にそのまま渡す (Typst 0.11 以降)．
+-- **どんな配置でも組める**．
+--
+-- 2026-08-31 まではギロチン分割 (箱をまたがない切れ目で再帰的に割る) で組んでいた．
+-- Quarto 1.4 が同梱する Typst 0.10 に `grid.cell` が無かったためで，
+-- **縦にも横にも切れ目が無い配置は組めない**という制限があった．
+-- Quarto 1.10 (Typst 0.15) へ上げ，peace-of-posters も 0.6.0 にしたので，
+-- **その版でしか動かない**古い経路は消した (中身は git の履歴にある)．
 -- ---------------------------------------------------------------------------
 
 local function num(v, default)
@@ -125,32 +125,6 @@ local function read_grid(meta_grid)
   return cols, boxes
 end
 
--- 区画 [x0,x1) x [y0,y1) を，箱をまたがない切れ目で2つに割る．
--- 縦の切れ目を先に探し (左右に並ぶ)，無ければ横 (上下に積む)．
-local function split(boxes, x0, x1, y0, y1)
-  for cx = x0 + 1, x1 - 1 do
-    local crosses, left, right = false, {}, {}
-    for _, b in ipairs(boxes) do
-      if b.x < cx and b.x + b.w > cx then crosses = true break end
-      if b.x + b.w <= cx then left[#left + 1] = b else right[#right + 1] = b end
-    end
-    if not crosses and #left > 0 and #right > 0 then
-      return 'v', cx, left, right
-    end
-  end
-  for cy = y0 + 1, y1 - 1 do
-    local crosses, top, bottom = false, {}, {}
-    for _, b in ipairs(boxes) do
-      if b.y < cy and b.y + b.h > cy then crosses = true break end
-      if b.y + b.h <= cy then top[#top + 1] = b else bottom[#bottom + 1] = b end
-    end
-    if not crosses and #top > 0 and #bottom > 0 then
-      return 'h', cy, top, bottom
-    end
-  end
-  return nil
-end
-
 -- 本文を「見出し名 → その箱の中身のブロック列」に切り分ける．
 -- `# ` より前の内容は箱に属さないので，そのまま先頭に置く．
 local function split_into_boxes(blocks)
@@ -180,33 +154,19 @@ local function emit_box(out, item)
   out:insert(raw(']'))
 end
 
--- 区画を再帰的に切り分けて Typst を組み立てる．
-local function emit_region(out, boxes, content, x0, x1, y0, y1)
-  if #boxes == 1 then
-    emit_box(out, content[boxes[1].name])
-    return
+-- Typst 0.11 以降の経路: 座標をそのまま `grid.cell` に渡す．
+local function emit_grid_cells(out, boxes, content, cols)
+  local widths = {}
+  for _ = 1, cols do widths[#widths + 1] = '1fr' end
+  out:insert(raw('#grid(columns: (' .. table.concat(widths, ', ') ..
+                 '), column-gutter: 1em, row-gutter: 1em,'))
+  for _, b in ipairs(boxes) do
+    out:insert(raw(('grid.cell(x: %d, y: %d, colspan: %d, rowspan: %d)['):
+                   format(b.x, b.y, b.w, b.h)))
+    emit_box(out, content[b.name])
+    out:insert(raw('],'))
   end
-  local dir, cut, first, second = split(boxes, x0, x1, y0, y1)
-  if dir == nil then
-    local names = {}
-    for _, b in ipairs(boxes) do names[#names + 1] = b.name end
-    error('grid: の配置を Typst 0.10 で組めない (縦にも横にも切れ目が無い): ' ..
-          table.concat(names, ', ') .. '\n' ..
-          'どれかの箱の x/y/w/h を，長方形に切り分けられる形に直す．')
-  end
-  if dir == 'v' then
-    out:insert(raw('#grid(columns: (' .. (cut - x0) .. 'fr, ' .. (x1 - cut) ..
-                   'fr), column-gutter: 1em,'))
-    out:insert(raw('['))
-    emit_region(out, first, content, x0, cut, y0, y1)
-    out:insert(raw('],['))
-    emit_region(out, second, content, cut, x1, y0, y1)
-    out:insert(raw('],)'))
-  else
-    -- 上下は素直に並べるだけでよい (Typst は既定で縦に流す)．
-    emit_region(out, first, content, x0, x1, y0, cut)
-    emit_region(out, second, content, x0, x1, cut, y1)
-  end
+  out:insert(raw(')'))
 end
 
 function Pandoc(doc)
@@ -238,11 +198,7 @@ function Pandoc(doc)
       end
     end
 
-    local rows = 0
-    for _, b in ipairs(boxes) do
-      if b.y + b.h > rows then rows = b.y + b.h end
-    end
-    emit_region(out, boxes, content, 0, cols, 0, rows)
+    emit_grid_cells(out, boxes, content, cols)
     -- 段組みへの流し込みは使わないので，テンプレート側の columns() を1段にする．
     doc.meta.cols = pandoc.MetaString("1")
   else

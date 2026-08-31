@@ -25,8 +25,8 @@ format: qtposter-typst
 `grid:` は acposter・ggposter と同じ書式で書く．
 この箱は `w: 2` なので，左の2列ぶんの幅をとる．
 
-Quarto 1.4 が同梱する Typst 0.10 には `grid.cell` が無いため，
-qtposter は**ギロチン分割** (箱をまたがない切れ目で再帰的に割る) で同じ配置を組む．
+座標はそのまま Typst の `grid.cell` に渡すので，**どんな配置でも組める**
+(Typst 0.11 以降が要る．Quarto 1.5 以降を使う)．
 
 # 結果一覧
 

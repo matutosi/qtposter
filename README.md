@@ -1,6 +1,11 @@
 # qtposter
 
 **Quarto + Typst で学会用のポスター (A0) を組む**ための最小の拡張．
+
+**Quarto 1.5 以降が要る** (2026-08-31 に確認した動作環境は 1.10.18 / Typst 0.15.1)．
+組版に使う peace-of-posters 0.6.0 も `grid.cell` も **Typst 0.11 以降**の機能なので，
+Quarto 1.4 (Typst 0.10) では組めない．
+
 組版は [peace-of-posters](https://github.com/jonaspleyer/peace-of-posters) (MIT) に任せ，
 qtposter は **Markdown の書き方を決める薄い層**だけを持つ．
 
@@ -92,15 +97,15 @@ validate-yaml: false
 - `{.break}` は `grid:` を使うときは効かない (配置は `grid:` が決める)．警告が出る．
 - 見本は [`poster_grid.qmd`](poster_grid.qmd)．
 
-### 仕組み (Typst 0.10 での制約)
+### 仕組み (`grid.cell` に渡すだけ)
 
-**Quarto 1.4 が同梱する Typst は 0.10 で，`grid.cell` が無い**ため，
-colspan/rowspan をそのまま書けない (`error: function grid does not contain field cell`)．
-そこで qtposter は**ギロチン分割**する — 箱をまたがない縦の切れ目を探して
-`#grid` の2列に分け，無ければ横の切れ目で上下に分け，これを再帰する．
-ポスターの配置はほぼこれで表せる．**縦にも横にも切れ目が無い配置だけは組めない**ので，
-そのときは箱の名前を挙げてエラーにする．
-Quarto を上げて Typst 0.11 以降になれば，`grid.cell` の素直な対応に置き換えてよい．
+座標をそのまま Typst の `grid.cell(x:, y:, colspan:, rowspan:)` に渡す．
+**どんな配置でも組める** (組めない配置は無い)．
+
+2026-08-31 までは**ギロチン分割** (箱をまたがない切れ目で再帰的に割る) で組んでいた．
+Quarto 1.4 が同梱する Typst 0.10 に `grid.cell` が無かったためで，
+**縦にも横にも切れ目が無い配置は組めない**という制限があった．
+Quarto 1.10 (Typst 0.15) へ上げてこの制限は無くなった．
 
 ## 中身を見たいとき
 
