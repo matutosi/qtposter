@@ -1,0 +1,97 @@
+# qtposter の CI (3系統で揃えた構成．acposter の test.yml と同じ考え方)
+#
+# 見本4本を実際に組み，**「組めた」で終わらせずに中身まで確かめる**．
+# PDF ができていても中身が別物ということがあるので (acposter で実例)，
+# `pdftotext` でテキストを抜き出し，見本ごとの既知の文字列を機械的に確かめる．
+# そのあと `check_poster_pdf.ps1` で検算する (ページ数・用紙実寸・埋め込みフォント)．
+#
+# **和文は `pdftotext` で抜き出せない** (Typst の PDF は CJK のサブセットに
+# ToUnicode を持たないため．2026-08-31 に実機で確認)．そこで**欧文の文字列**を
+# 目印にする．和文が化けていないかは，成果物の PDF を目で見て確かめる．
+#
+# **和文フォントは OS ごとに入れ替える**．見本は Yu Gothic を指定しているが，
+# Ubuntu にも macOS にも無いので，`-M font:` でその OS にあるものへ差し替える
+# (ヘッダーより後から渡した値が優先される)．
+
+name: qtposter test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            font: "Noto Sans CJK JP"
+          - os: macos-latest
+            font: "Hiragino Sans"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # qtposter は Quarto 1.5 以降が要る (peace-of-posters 0.6.0 も grid.cell も
+      # Typst 0.11 以降)．版を固定して，上流の更新で黙って壊れないようにする．
+      - uses: quarto-dev/quarto-actions/setup@v2
+        with:
+          version: 1.10.18
+
+      - name: Install poppler (pdftotext / pdfinfo) and a CJK font
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            brew install poppler
+          else
+            sudo apt-get update -y
+            sudo apt-get install -y poppler-utils fonts-noto-cjk
+          fi
+
+      - name: Show versions
+        shell: bash
+        run: |
+          quarto --version
+          quarto typst --version
+
+      - name: Render the four samples
+        shell: bash
+        run: |
+          set -e
+          for f in poster_howto poster_howto2 poster_howto3 golf_course; do
+            quarto render "$f.qmd" -M font:"${{ matrix.font }}"
+          done
+
+      - name: Verify PDF content (not just that a file appeared)
+        shell: bash
+        run: |
+          set -e
+          check() {
+            local pdf="$1" needle="$2"
+            if ! pdftotext "$pdf" - | grep -qF "$needle"; then
+              echo "::error::$pdf に期待した文字列が無い: $needle"
+              exit 1
+            fi
+            echo "OK: $pdf に '$needle' を確認"
+          }
+          check poster_howto.pdf  "boxes.lua"
+          check poster_howto2.pdf "format: qtposter-typst"
+          check poster_howto3.pdf "grid.boxes"
+          check golf_course.pdf   "grassland species richness"
+
+      - name: Check the PDFs (pages / paper size / embedded fonts)
+        shell: pwsh
+        run: pwsh -File check_poster_pdf.ps1
+
+      - name: Upload generated PDFs
+        uses: actions/upload-artifact@v4
+        with:
+          name: posters-${{ matrix.os }}
+          path: "*.pdf"
