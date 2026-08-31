@@ -127,6 +127,16 @@ validate-yaml: false
 quarto render poster_howto.qmd
 ```
 
+縮小した見本 (画像をクリックすると原稿の qmd へ)．
+
+| 1. 機能の一巡り | 2. 入力と出力の早見表 |
+|---|---|
+| [<img src="previews/poster_howto.png" width="320">](poster_howto.qmd) | [<img src="previews/poster_howto2.png" width="320">](poster_howto2.qmd) |
+
+| 3. 非対称な配置 | 4. 実際のポスターに近い例 |
+|---|---|
+| [<img src="previews/poster_howto3.png" width="320">](poster_howto3.qmd) | [<img src="previews/golf_course.png" width="320">](golf_course.qmd) |
+
 このほかに最小の見本 [`poster.qmd`](poster.qmd) (段組みの流し込み) がある．
 
 ## 姉妹ツールとの行き来
@@ -168,6 +178,7 @@ quarto render poster_howto.qmd
 | `poster_howto.qmd`・`poster_howto2.qmd`・`poster_howto3.qmd`・`golf_course.qmd` | 見本4本と，その PDF |
 | `check_poster_pdf.ps1` | できた PDF の検算 (ページ数・用紙実寸・埋め込みフォント) |
 | `images/` | 見本が使う仮の画像 |
+| `previews/` | README に載せる見本の縮小画像 (PDF から `pdftoppm -r 18` で作る) |
 | `notes/` | 調査の記録 (Quarto + Typst のポスター作例・試作で踏んだ罠) |
 | `.github/workflows/test.yml` | CI (Ubuntu・macOS で見本4本を組み，中身と検算まで確かめる) |
 | `LICENSE` | MIT |
