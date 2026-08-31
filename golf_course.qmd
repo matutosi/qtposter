@@ -6,7 +6,7 @@ institute: ["Example Women's Univ.", "Example Museum of Nature and Human Activit
 note: "※This is a demonstration poster for qtposter; it does not describe real research. Names, affiliations, and funding are fictional."
 paper: "a0"
 font: "Yu Gothic"
-font-size: 20pt
+font-size: 18pt
 accent: "#1a7a3c"
 grid:
   columns: 2
@@ -98,11 +98,11 @@ Summary of each golf course
 # DOMINANT SPECIES
 
 ::: {layout-ncol=4}
-![P. chino var. viridis](images/species1.jpg){width=40%}
+![P. chino var. viridis](images/species1.jpg){width=32%}
 
-![M. sinensis](images/species2.jpg){width=40%}
+![M. sinensis](images/species2.jpg){width=32%}
 
-![I. cylindrica var. koenigii](images/species3.jpg){width=40%}
+![I. cylindrica var. koenigii](images/species3.jpg){width=32%}
 
-![Z. japonica](images/species4.jpg){width=40%}
+![Z. japonica](images/species4.jpg){width=32%}
 :::

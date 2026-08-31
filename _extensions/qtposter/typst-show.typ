@@ -10,5 +10,6 @@ $if(size)$size: $size$,$endif$
 $if(footer)$footer: [$footer$],$endif$
 $if(logo)$logo: image("$logo$"),$endif$
 $if(accent)$accent: rgb("#" + "$accent$"),$endif$
+$if(fig-max-height)$fig-max-height: $fig-max-height$,$endif$
 doc,
 )
