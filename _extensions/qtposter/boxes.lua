@@ -15,6 +15,22 @@ function Image(img)
   end
 end
 
+-- `[説明](図.png)` のような書き間違い (画像記法 `![...]` の `!` の付け忘れ) を
+-- 画像として救済する．**acposter (`poster.lua`) と同じ約束**にして揃える．
+-- 直すのは拡張子が画像のときだけなので，ふつうのリンクは触らない．
+local IMAGE_EXT = { png = true, jpg = true, jpeg = true, gif = true, svg = true, webp = true }
+
+function Link(el)
+  local ext = el.target:match('%.([%a]+)$')
+  if ext and IMAGE_EXT[ext:lower()] then
+    local img = pandoc.Image(el.content, el.target, el.title, el.attr)
+    -- ここで作った画像に `Image` フィルタは掛からないので，幅の既定値は自分で入れる．
+    if not img.attributes.width then img.attributes.width = "100%" end
+    return img
+  end
+  return nil
+end
+
 -- 姉妹ツール (ggposter・acposter) が同じ意味に使っているキー名も受ける．
 -- 正は author / institute / note / paper / columns / font-size で，
 -- 内部 (typst-show.typ) が使う名前へ寄せるだけなので，古い書き方もそのまま通る．
