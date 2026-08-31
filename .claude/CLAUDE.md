@@ -37,6 +37,9 @@ qtposter は Markdown の書き方を決める薄い層だけを持つ** (2026-0
   - **CI では和文フォントを差し替える**．見本は Yu Gothic だが，Ubuntu は
     Noto Sans CJK JP，macOS は Hiragino Sans を `-M font:` で渡す
     (`-M` の上書きが効くことは実機で確認した)．
+  - **CI は Ubuntu・macOS とも初回から成功**．
+  - **リポジトリを Public にした** (2026-08-31 ユーザ指示．GitHub Actions を
+    回すため)．中身は架空のデータとプレースホルダー画像だけ．
 
 - 2026-08-31 10:55 (このセッション，MATUTOSI_DP) その3
   **3系統で揃えられるものを揃えた** (ユーザ指示)．
@@ -163,7 +166,8 @@ qtposter は Markdown の書き方を決める薄い層だけを持つ** (2026-0
     画像・数式・`{.break}`・`grid:`・副題・ロゴ・差し色．
   - **向き (`orientation`) は仕様上できない** (peace-of-posters の layout-a0 が縦固定，
     かつ Quarto の予約キー)．
-- **【決定 2026-08-31】独立リポジトリにした** (ユーザ確定)．`git init` ＋ GitHub `matutosi/qtposter` (Private)．
+- **【決定 2026-08-31】独立リポジトリにした** (ユーザ確定)．`git init` ＋ GitHub `matutosi/qtposter`
+  (**2026-08-31 に Private → Public**．CI を回すため)．
   親リポジトリは許可制の `.gitignore` なので，親からは追跡されない．
 - 次の一手の候補: 非対称配置 (`grid` の `rowspan`) を md から書けるようにする，
   実データの原稿で1枚組んでフォントサイズの当たりを取る．
