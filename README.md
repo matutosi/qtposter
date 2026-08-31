@@ -15,9 +15,9 @@ README の項目と順序は3つで揃えてある．
 
 - 用紙: A0 (縦．**向きは変えられない**)
 - `# 見出し` ごとに1つの箱 (peace-of-posters の `column-box`)
-- 既定は段組みの流し込み．段の切れ目は `# 見出し {.break}` で決める
+- 既定は段組みの流し込み．段の切れ目は `# 見出し {.break}`，全幅の箱は `# 見出し {.full}`
 - ヘッダーに `grid:` (各箱の `x`/`y`/`w`/`h` 座標) を書けば非対称な配置にできる
-- 図・表・箇条書き・コードチャンク (`{r}` を書けば実行して図も出せる)
+- 図 (高さの上限つき)・表 (booktabs 調)・箇条書き・コードチャンク (`{r}` を書けば実行して図も出せる)
 - 副題・ロゴ・差し色
 - **日本語の禁則処理と数式は Typst の質がそのまま出る**
 
@@ -70,8 +70,15 @@ pwsh -File check_poster_pdf.ps1 -Pdf poster.pdf
 - **`# 見出し {.break}` と書くと，その箱から次の段へ送る**．
   Typst の `columns` は「あふれたら次の段」なので，**A0 では自動で分かれない**．
   段の切れ目は書き手が決める．
+- **`# 見出し {.full}` と書くと，その箱だけ全幅**になる．段組みをいったん閉じ，
+  箱のあとで開き直す．幅の広い表や，最後の「まとめ」に使う
+  (`grid:` を使うときは効かない．`w:` で同じことができる)．
 - **画像の幅は既定で段幅いっぱい**になる．`![図](a.png){width=60%}` と書けば
   その指定が優先される．
+- **画像の高さには上限がある**．既定は**その箱に使える高さの 25%**で，
+  超える画像は縦横の比を保ったまま縮む (縦長の画像1枚で箱が伸びきり，
+  後ろの箱が紙面から溢れるのを防ぐ)．ヘッダーの `fig-max-height: 30%` で変えられる．
+- **表は booktabs 調**になる (上端・見出しの下・下端の3本だけ．縦罫は引かない)．
 - 画像を横に並べたいときは `::: {layout-ncol=2}` … `:::` で囲む
   (**画像どうしは空行で区切る**)．
 - **`!` の付け忘れは救済する**．`[説明](図.png)` のように書いても，拡張子が画像なら
@@ -109,9 +116,6 @@ validate-yaml: false
 
 ## 見本
 
-**4本は ggposter・acposter と同じ内容・同じ順で揃えてある** (2026-08-31)．
-「同じポスターを3つの書き方で書くとこうなる」を見比べられる．
-
 | | 見本 | 内容 |
 |---|---|---|
 | 1 | [`poster_howto.qmd`](poster_howto.qmd) | 機能の一巡り (箱・段送り・表・図・図の横並び) |
@@ -124,8 +128,6 @@ quarto render poster_howto.qmd
 ```
 
 このほかに最小の見本 [`poster.qmd`](poster.qmd) (段組みの流し込み) がある．
-対応する見本は acposter の `examples/` の4本，
-ggposter の `inst/extdata/poster_sample*.yml`．
 
 ## 姉妹ツールとの行き来
 
@@ -174,11 +176,10 @@ ggposter の `inst/extdata/poster_sample*.yml`．
 
 - **2026-08-30 に着手した最小の試作**．出発点に peace-of-posters を選んだ経緯は
   [`notes/survey_quarto_typst.md`](notes/survey_quarto_typst.md)．
-- **acposter との棲み分けは未決**．見本4本が3系統で揃ったので，見比べて決められる．
 - 詳しい進捗は [`.claude/CLAUDE.md`](.claude/CLAUDE.md)．
 
 ## ライセンス
 
-**MIT** ([`LICENSE`](LICENSE))．3系統 (ggposter・acposter・qtposter) とも MIT で揃えてある．
+**MIT** ([`LICENSE`](LICENSE))．
 組版に使う [peace-of-posters](https://github.com/jonaspleyer/peace-of-posters) も MIT
 (同梱はせず，Quarto が取ってくる)．

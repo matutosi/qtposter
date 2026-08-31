@@ -155,6 +155,7 @@ local function split_into_boxes(blocks)
     if blk.t == "Header" and blk.level == 1 then
       cur = { name = pandoc.utils.stringify(blk.content),
               broken = blk.classes:includes("break"),
+              full = blk.classes:includes("full"),
               blocks = pandoc.List() }
       order[#order + 1] = cur
       content[cur.name] = cur
@@ -223,12 +224,47 @@ function Pandoc(doc)
     -- 段組みへの流し込みは使わないので，テンプレート側の columns() を1段にする．
     doc.meta.cols = pandoc.MetaString("1")
   else
-    for _, item in ipairs(order) do
-      -- `# 見出し {.break}` と書いたら，その箱から次の段へ送る．
-      -- Typst の columns は「あふれたら次の段」なので，A0 では自動では分かれない．
-      if item.broken then out:insert(raw('#colbreak()')) end
-      emit_box(out, item)
+    -- 段組みの流し込み．**`# 見出し {.full}` の箱はいったん段組みを閉じて全幅で置き，
+    -- そのあと段組みを開き直す** (acposter の `{.full}` と同じ約束)．
+    -- Typst の `columns()` は入れ子にできるが「途中で1つだけ全幅」は書けないので，
+    -- 段組みの塊を切って間に挟む形にする．
+    local cols = 3
+    if doc.meta.cols ~= nil then
+      cols = math.floor(tonumber(pandoc.utils.stringify(doc.meta.cols)) or 3)
+      if cols < 1 then cols = 1 end
     end
+
+    local open = false            -- いま段組みの塊を開いているか
+    local function open_columns()
+      if not open then
+        out:insert(raw('#columns(' .. cols .. ')['))
+        open = true
+      end
+    end
+    local function close_columns()
+      if open then
+        out:insert(raw(']'))
+        open = false
+      end
+    end
+
+    for _, item in ipairs(order) do
+      if item.full then
+        if item.broken then
+          io.stderr:write('[warning] {.full} の箱に {.break} は要らない (' ..
+                          item.name .. ')．全幅の箱は段組みの外に出る．\n')
+        end
+        close_columns()
+        emit_box(out, item)
+      else
+        open_columns()
+        -- `# 見出し {.break}` と書いたら，その箱から次の段へ送る．
+        -- Typst の columns は「あふれたら次の段」なので，A0 では自動では分かれない．
+        if item.broken then out:insert(raw('#colbreak()')) end
+        emit_box(out, item)
+      end
+    end
+    close_columns()
   end
 
   doc.blocks = out
