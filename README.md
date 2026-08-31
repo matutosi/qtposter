@@ -52,6 +52,15 @@ accent: "#1a7a3c"        # 省略可．見出し帯の色 (既定は uni-fr の�
 format: qtposter-typst
 ```
 
+組んだあとは**検算**する．刷ってから気づく事故を防ぐため，
+ページ数 (ポスターは常に1)・用紙実寸・埋め込みフォントを見る
+(出力の文言は acposter と揃えてある)．
+
+```powershell
+pwsh -File check_poster_pdf.ps1              # 直下の PDF を全部見る
+pwsh -File check_poster_pdf.ps1 -Pdf poster.pdf
+```
+
 中間の Typst を見たいときは `_extensions/qtposter/_extension.yml` に
 `keep-typ: true` を足す (acposter の `-KeepHtml` にあたる)．
 
@@ -153,6 +162,7 @@ ggposter の `inst/extdata/poster_sample*.yml`．
 | `_extensions/qtposter/boxes.lua` | `# 見出し` → 箱，`{.break}` → 段送り，`grid:` → `grid.cell`，画像の幅の既定値，ヘッダーのキー名の別名 |
 | `poster.qmd` | 最小の見本 (段組みの流し込み) |
 | `poster_howto.qmd`・`poster_howto2.qmd`・`poster_howto3.qmd`・`golf_course.qmd` | 見本4本と，その PDF |
+| `check_poster_pdf.ps1` | できた PDF の検算 (ページ数・用紙実寸・埋め込みフォント) |
 | `images/` | 見本が使う仮の画像 |
 | `notes/` | 調査の記録 (Quarto + Typst のポスター作例・試作で踏んだ罠) |
 
