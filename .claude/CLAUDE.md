@@ -26,6 +26,18 @@ qtposter は Markdown の書き方を決める薄い層だけを持つ** (2026-0
 
 ### 現在の状態
 
+- 2026-08-31 11:30 (このセッション，MATUTOSI_DP) その4
+  **ライセンスと CI を3系統で揃えた** (ユーザ指示)．
+  - **MIT の `LICENSE` を置いた** (ggposter は元から MIT)．README にも節を足した．
+  - **CI を新設した** (`.github/workflows/test.yml`)．Ubuntu と macOS で
+    Quarto 1.10.18 を入れ，見本4本を組み，`pdftotext` で中身を確かめ，
+    `check_poster_pdf.ps1` で検算し，PDF を成果物として上げる．
+  - **和文は `pdftotext` で抜き出せない** (Typst の PDF は CJK に ToUnicode を
+    持たない)．目印は**欧文の文字列**にした (`boxes.lua`・`grid.boxes` など)．
+  - **CI では和文フォントを差し替える**．見本は Yu Gothic だが，Ubuntu は
+    Noto Sans CJK JP，macOS は Hiragino Sans を `-M font:` で渡す
+    (`-M` の上書きが効くことは実機で確認した)．
+
 - 2026-08-31 10:55 (このセッション，MATUTOSI_DP) その3
   **3系統で揃えられるものを揃えた** (ユーザ指示)．
   - **README の項目と順序**を3つ共通にした (つくれるもの → 前提 → 使い方 → 書き方の約束 →
@@ -145,7 +157,8 @@ qtposter は Markdown の書き方を決める薄い層だけを持つ** (2026-0
      (ページ数・用紙実寸・埋め込みフォント．出力の文言は acposter に揃えた)．
   6. **表の体裁**が pandoc 既定の全罫線．acposter・ggposter は booktabs 調．
   7. ~~見本が2本~~ → **2026-08-31 に4本へ揃えた** (acposter・ggposter と同じ内容・同じ順)．
-  8. **CI が無い** (acposter は GitHub Actions で Mac/Linux のビルドを確かめている)．
+  8. ~~CI が無い~~ → **2026-08-31 に足した** (`.github/workflows/test.yml`．
+     Ubuntu・macOS で見本4本を組み，欧文の目印で中身を確かめ，検算まで走らせる)．
   - 動くことを確かめたもの: 表・箇条書き (入れ子も)・コードブロック (色つき)・
     画像・数式・`{.break}`・`grid:`・副題・ロゴ・差し色．
   - **向き (`orientation`) は仕様上できない** (peace-of-posters の layout-a0 が縦固定，

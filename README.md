@@ -167,6 +167,8 @@ ggposter の `inst/extdata/poster_sample*.yml`．
 | `check_poster_pdf.ps1` | できた PDF の検算 (ページ数・用紙実寸・埋め込みフォント) |
 | `images/` | 見本が使う仮の画像 |
 | `notes/` | 調査の記録 (Quarto + Typst のポスター作例・試作で踏んだ罠) |
+| `.github/workflows/test.yml` | CI (Ubuntu・macOS で見本4本を組み，中身と検算まで確かめる) |
+| `LICENSE` | MIT |
 
 ## 現状と経緯
 
@@ -174,3 +176,9 @@ ggposter の `inst/extdata/poster_sample*.yml`．
   [`notes/survey_quarto_typst.md`](notes/survey_quarto_typst.md)．
 - **acposter との棲み分けは未決**．見本4本が3系統で揃ったので，見比べて決められる．
 - 詳しい進捗は [`.claude/CLAUDE.md`](.claude/CLAUDE.md)．
+
+## ライセンス
+
+**MIT** ([`LICENSE`](LICENSE))．3系統 (ggposter・acposter・qtposter) とも MIT で揃えてある．
+組版に使う [peace-of-posters](https://github.com/jonaspleyer/peace-of-posters) も MIT
+(同梱はせず，Quarto が取ってくる)．
