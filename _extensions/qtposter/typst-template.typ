@@ -16,7 +16,17 @@
   margin: 2cm,
   doc,
 ) = {
-  set page(paper: paper, margin: margin)
+  // ページ番号は消す (Quarto の既定は "1"．ポスターは1枚なので要らない)．
+  // **注記の帯 (footer) はページの下端に置く**．本文の流れの最後に置くと，
+  // 箱が紙面いっぱいになったときに帯だけが2ページ目へ溢れる (2026-08-31 に実例)．
+  set page(
+    paper: paper,
+    margin: margin,
+    numbering: none,
+    footer-descent: 0pt,
+    // 帯は下の余白に置くので，本文より小さくして2行でも収まるようにする．
+    footer: if footer != none { pop.bottom-box()[#text(size: 0.6em)[#footer]] },
+  )
   set text(font: font, size: size, lang: "ja")
   // 図は箱の幅に収める (既定では原寸で組まれ，箱からはみ出す)．
   set image(width: 100%)
@@ -37,5 +47,4 @@
     logo: logo,
   )
   columns(cols, doc)
-  if footer != none { pop.bottom-box()[#footer] }
 }

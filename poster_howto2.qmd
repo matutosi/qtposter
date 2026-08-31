@@ -1,0 +1,152 @@
+---
+title: "qtposter: 入力と出力"
+subtitle: "書いたものが，どう出るか"
+author: ["qmd の書き方の早見表"]
+institute: ["qtposter"]
+note: "左の列に qmd へ書くもの，右の列にその結果を並べた．機能の一巡りは poster_howto.qmd を見る．"
+paper: "a0"
+font: "Yu Gothic"
+font-size: 26pt
+accent: "#1a7a3c"
+grid:
+  columns: 2
+  boxes:
+    - {name: ヘッダーの入力,   x: 0, y: 0}
+    - {name: ヘッダーの出力,   x: 1, y: 0}
+    - {name: 箇条書きの入力,   x: 0, y: 1}
+    - {name: 箇条書きの出力,   x: 1, y: 1}
+    - {name: 表の入力,         x: 0, y: 2}
+    - {name: 表の出力,         x: 1, y: 2}
+    - {name: 図の入力,         x: 0, y: 3}
+    - {name: 図の出力,         x: 1, y: 3}
+    - {name: 段組みの入力,     x: 0, y: 4}
+    - {name: 段組みの出力,     x: 1, y: 4}
+    - {name: 座標配置の入力,   x: 0, y: 5}
+    - {name: 座標配置の出力,   x: 1, y: 5}
+validate-yaml: false
+format: qtposter-typst
+---
+
+# ヘッダーの入力
+
+```
+---
+title: "私のポスター"
+subtitle: "副題"
+author: ["山田 太郎"]
+institute: ["例大学"]
+note: "短い注記"
+format: qtposter-typst
+---
+```
+
+# ヘッダーの出力
+
+表題帯は紙面の全幅をとり，どの箱よりも上に出る．
+`note` は下端の帯になる．
+
+```{=typst}
+#rect(fill: rgb("#1a7a3c"), width: 100%, inset: 0.5em)[
+  #text(fill: white, size: 1.1em, weight: "bold")[私のポスター] \
+  #text(fill: white, size: 0.8em)[副題] \
+  #text(fill: white, size: 0.7em)[山田 太郎 / 例大学]
+]
+```
+
+# 箇条書きの入力
+
+```
+- 1つ目
+- 2つ目
+  - 入れ子
+```
+
+# 箇条書きの出力
+
+- 1つ目
+- 2つ目
+  - 入れ子
+
+# 表の入力
+
+```
+| 項目 | 値 |
+|---|---|
+| A | 1 |
+| B | 2 |
+```
+
+# 表の出力
+
+| 項目 | 値 |
+|---|---|
+| A | 1 |
+| B | 2 |
+
+# 図の入力
+
+```
+![図の例](images/howto_fig.png)
+```
+
+幅を書かなければ箱の幅いっぱいに収まる．
+`{width=60%}` と書けばその幅になる．
+
+# 図の出力
+
+![図の例](images/howto_fig.png){width=60%}
+
+# 段組みの入力
+
+`grid:` を書かなければ段組みの流し込みになる．
+段数は `columns:`，段の切れ目は `{.break}`．
+
+```
+---
+columns: 2
+---
+# 箱 A
+# 箱 B
+# 箱 C {.break}
+```
+
+# 段組みの出力
+
+`箱 A`・`箱 B` が左の段を上から埋め，`箱 C` から右の段に移る．
+
+```{=typst}
+#grid(columns: (1fr, 1fr), column-gutter: 0.6em,
+[#rect(width: 100%, inset: 0.4em, radius: 0.3em)[箱 A] #v(0.3em)
+ #rect(width: 100%, inset: 0.4em, radius: 0.3em)[箱 B]],
+[#rect(width: 100%, inset: 0.4em, radius: 0.3em)[箱 C]],
+)
+```
+
+# 座標配置の入力
+
+非対称に置きたいときは `grid:` に座標を書く
+(`grid` は Quarto の予約キーなので `validate-yaml: false` も要る)．
+
+```
+grid:
+  columns: 2
+  boxes:
+    - {name: 箱 A, x: 0, y: 0, w: 2}
+    - {name: 箱 B, x: 0, y: 1}
+    - {name: 箱 C, x: 1, y: 1}
+validate-yaml: false
+```
+
+# 座標配置の出力
+
+`箱 A` が上の全幅 (`w: 2`)，その下に `箱 B` と `箱 C` が横に並ぶ．
+このページ自体も `grid:` の2列で組んである．
+
+```{=typst}
+#rect(width: 100%, inset: 0.4em, radius: 0.3em)[箱 A (w: 2)]
+#v(0.3em)
+#grid(columns: (1fr, 1fr), column-gutter: 0.6em,
+[#rect(width: 100%, inset: 0.4em, radius: 0.3em)[箱 B]],
+[#rect(width: 100%, inset: 0.4em, radius: 0.3em)[箱 C]],
+)
+```

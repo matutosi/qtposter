@@ -55,6 +55,11 @@ function Meta(meta)
       end
     end
   end
+  -- **`columns` は Quarto 自身も使う** (2026-08-31 に Quarto 1.10 で判明)．
+  -- 残したままだと Quarto が `#set page(columns: 3)` を出し，qtposter の
+  -- `columns(cols, doc)` と**段組みが二重になる** (箱の幅が 1/9 になり紙面が壊れる)．
+  -- 段数は `cols` へ写し終えているので，ここで消す (`grid`・`orientation` と同種の衝突)．
+  meta.columns = nil
   return strip_hash(meta)
 end
 
