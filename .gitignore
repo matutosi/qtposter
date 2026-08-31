@@ -2,6 +2,7 @@
 /.quarto/
 *.typ
 !_extensions/**/*.typ
+*_files/
 
 # OS
 Thumbs.db

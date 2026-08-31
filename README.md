@@ -120,6 +120,13 @@ pandoc が作った `poster.typ` が残る (acposter の `-KeepHtml` にあた�
 | `_extensions/qtposter/typst-template.typ` | peace-of-posters を呼ぶ関数 (`qtposter`) |
 | `_extensions/qtposter/typst-show.typ` | YAML を関数の引数へ渡す |
 | `_extensions/qtposter/boxes.lua` | `# 見出し` → 箱，`{.break}` → 段送り，画像の幅の既定値，ヘッダーのキー名の別名 |
-| `poster.qmd` | 検証用の見本 (段組みの流し込み) |
-| `poster_grid.qmd` | 検証用の見本 (`grid:` の非対称な配置・副題・差し色) |
+| `poster.qmd` | 最小の見本 (段組みの流し込み) |
+| `poster_howto.qmd` | **見本1: 機能の一巡り**．箱・段送り・表・図・図の横並びを1つずつ実演する |
+| `poster_howto2.qmd` | **見本2: 入力と出力の早見表**．左の列に qmd へ書くもの，右の列にその結果 |
+| `poster_howto3.qmd` | **見本3: 非対称な配置**．`grid:` の座標指定と，段組みとの使い分け |
+| `golf_course.qmd` | **見本4: 実際のポスターに近い例** (架空のデータ)．`grid:` で非対称に置く |
 | `images/` | 見本が使う仮の画像 |
+
+**見本4本は ggposter・acposter と同じ内容・同じ順で揃えてある** (2026-08-31)．
+acposter の `examples/` の4本，ggposter の `inst/extdata/poster_sample*.yml` が対応する．
+「同じポスターを3つの書き方で書くとこうなる」を見比べられる．
