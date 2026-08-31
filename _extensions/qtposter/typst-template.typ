@@ -1,11 +1,23 @@
 // qtposter: peace-of-posters を使う Quarto 用の薄いテンプレート．
 #import "@preview/peace-of-posters:0.6.0" as pop
 
+// 著者と所属から「氏名(所属)」の行を作る (acposter の `make_byline` と同じ規則)．
+// 所属が1つなら全員の後ろに1つだけ付け，複数なら著者ごとに対にする．
+#let byline(authors, institutes) = {
+  if authors.len() == 0 { return none }
+  if institutes.len() == 0 { return authors.join([・]) }
+  if institutes.len() == 1 { return authors.join([・]) + [(] + institutes.at(0) + [)] }
+  authors
+    .enumerate()
+    .map(((i, a)) => a + [(] + institutes.at(calc.min(i, institutes.len() - 1)) + [)])
+    .join([・])
+}
+
 #let qtposter(
   title: "",
   subtitle: none,
-  authors: "",
-  institutes: "",
+  authors: (),
+  institutes: (),
   paper: "a0",
   cols: 3,
   font: "Yu Gothic",
@@ -18,15 +30,14 @@
   doc,
 ) = {
   // ページ番号は消す (Quarto の既定は "1"．ポスターは1枚なので要らない)．
-  // **注記の帯 (footer) はページの下端に置く**．本文の流れの最後に置くと，
-  // 箱が紙面いっぱいになったときに帯だけが2ページ目へ溢れる (2026-08-31 に実例)．
+  // **注記 (footer) は表題帯の中に入れる** (acposter と同じ位置．2026-08-31)．
+  // ページの下端に別の帯として置くと，acposter・ggposter と見た目が揃わないうえ，
+  // 本文の流れに置いた時期には箱が紙面いっぱいのときに帯だけが2ページ目へ溢れていた．
+  // 表題帯の中なら，紙面がどれだけ詰まっても溢れない．
   set page(
     paper: paper,
     margin: margin,
     numbering: none,
-    footer-descent: 0pt,
-    // 帯は下の余白に置くので，本文より小さくして2行でも収まるようにする．
-    footer: if footer != none { pop.bottom-box()[#text(size: 0.6em)[#footer]] },
   )
   set text(font: font, size: size, lang: "ja")
 
@@ -71,13 +82,21 @@
     )
   }
 
-  pop.title-box(
-    title,
-    subtitle: subtitle,
-    authors: authors,
-    institutes: institutes,
-    logo: logo,
-  )
+  // **表題帯は中央揃えにし，著者と所属を「氏名(所属)」の1行にまとめる**
+  // (acposter の `.title-band` と同じ見た目．2026-08-31 に3系統で揃えた)．
+  // peace-of-posters の既定は左揃えで，著者と所属を別々の行に積む．
+  // 注記は `keywords:` の枠を借りて，帯のいちばん下に小さく置く．
+  {
+    set align(center)
+    pop.title-box(
+      title,
+      subtitle: subtitle,
+      authors: byline(authors, institutes),
+      institutes: none,
+      keywords: if footer != none { text(size: 0.5em)[#footer] },
+      logo: logo,
+    )
+  }
   // **段組みはフィルタ側が掛ける** (`boxes.lua`)．`{.full}` の箱で段組みを
   // いったん閉じて全幅で置き，また開き直す必要があるため，ここでは掛けない．
   // `cols` はフィルタが読む (typst-show.typ 経由で渡ってくる値と同じもの)．

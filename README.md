@@ -46,7 +46,7 @@ paper: "a0"      # 用紙
 columns: 3       # 段数
 font: "Yu Gothic"
 font-size: 32pt
-note: "植生学会第30回大会"
+note: "植生学会第30回大会"   # 表題帯の下端に小さく入る
 logo: images/logo.png    # 省略可．表題帯の右に入る
 accent: "#1a7a3c"        # 省略可．見出し帯の色 (既定は uni-fr の紺)
 format: qtposter-typst
@@ -118,7 +118,7 @@ validate-yaml: false
 
 | | 見本 | 内容 |
 |---|---|---|
-| 1 | [`poster_howto.qmd`](poster_howto.qmd) | 機能の一巡り (箱・段送り・表・図・図の横並び) |
+| 1 | [`poster_howto.qmd`](poster_howto.qmd) | 機能の一巡り (箱・`{.break}`・`{.full}`・表・図・図の横並び・画像の救済) |
 | 2 | [`poster_howto2.qmd`](poster_howto2.qmd) | 入力と出力の早見表．左の列に qmd へ書くもの，右の列にその結果 |
 | 3 | [`poster_howto3.qmd`](poster_howto3.qmd) | 非対称な配置．`grid:` の座標指定と，段組みとの使い分け |
 | 4 | [`golf_course.qmd`](golf_course.qmd) | 実際のポスターに近い例 (架空のデータ)．`grid:` で非対称に置く |

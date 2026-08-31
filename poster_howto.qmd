@@ -5,9 +5,10 @@ author: ["qtposter の機能を1つずつ実演する見本"]
 institute: ["qtposter"]
 note: "下の箱が1つずつ機能を実演する．全体の説明は README を見る．"
 paper: "a0"
-columns: 3
+columns: 2
 font: "Yu Gothic"
-font-size: 30pt
+font-size: 26pt
+fig-max-height: 12%
 accent: "#1a7a3c"
 format: qtposter-typst
 ---
@@ -29,7 +30,7 @@ format: qtposter-typst
 # 既定の配置: 段組みの流し込み
 
 - `grid:` を書かなければ，箱は書いた順に段へ流し込まれる．
-- 段数はヘッダーの `columns:` で決める (この見本は 3)．
+- 段数はヘッダーの `columns:` で決める (この見本は 2)．
 - Typst の段組みは「あふれたら次の段」なので，**A0 では自動では分かれない**．
 
 # 段を送る {.break}
@@ -50,8 +51,8 @@ format: qtposter-typst
 | --- | --- |
 | 箱 | `# 見出し` |
 | 段送り | `# 見出し {.break}` |
+| 全幅の箱 | `# 見出し {.full}` |
 | 座標で配置 | ヘッダーの `grid:` |
-| 図の幅 | `![](f.png){width=60%}` |
 
 # 図の箱
 
@@ -61,50 +62,31 @@ format: qtposter-typst
 (Quarto は既定で原寸 pt を焼き込むので，`boxes.lua` が `width=100%` を補う)．
 `{width=60%}` のように書けば，その指定が優先される．
 
-# 図を横に並べる
+# 図を横に並べる {.full}
 
-::: {layout-ncol=2}
-![写真1](images/photo1.jpg)
-
-![写真2](images/photo2.jpg)
-:::
-
-`::: {layout-ncol=2}` … `:::` で囲むと横に並ぶ．
+`::: {layout-ncol=3}` … `:::` で囲むと横に並ぶ．
 **画像どうしは空行で区切る** (空行が無いと1つの段落にまとまる)．
+この箱の見出しには `{.full}` が付いていて，段組みの途中でもここだけ全幅になる．
+
+::: {layout-ncol=3}
+![写真1](images/photo1.jpg){width=40%}
+
+![写真2](images/photo2.jpg){width=40%}
+
+![写真3](images/photo3.jpg){width=40%}
+:::
 
 # 画像の書き間違いの救済
 
-[この画像はリンク記法で書いている](images/howto_fig.png)
+[この画像はリンク記法で書いている](images/howto_fig.png){width=45%}
 
 上の行は `!` を付け忘れた `[説明](図.png)` の形だが，
 **拡張子が画像なら画像として組む** (保険．正しくは `![...]` と書く)．
 acposter と同じ約束．
 
-# コードの箱
+# 次に見るもの
 
-```r
-# コードはそのまま組まれる
-x <- rnorm(100)
-mean(x)
-```
-
-チャンク (`` ```{r} ``) として書けば実行して図も出せる．
-実行しないときは上のように言語名だけを書く．
-
-# 姉妹ツールとの行き来
-
-同じ種類のポスターを作るツールが3系統ある (ggposter・acposter・qtposter)．
-
-- **ヘッダーのキー名は3つとも別名で受ける**
-  (`author`/`authors`/`poster-authors` など)．
-- **配置を移すときは `grid:`**．3つとも完全に同じ書式．
-- 詳しくは `poster_howto3.qmd` と README を見る．
-
-# 次に見るもの {.full}
-
-**この箱の見出しには `{.full}` が付いている**．段組みの途中でもその箱だけ全幅になる
-(段組みをいったん閉じ，箱のあとで開き直す)．幅の広い表や，最後の「まとめ」に使う．
-`grid:` を使うときは効かない (`w:` で同じことができる)．
+ほかの見本は同じディレクトリにある．
 
 - `poster_howto2.qmd` — 入力と出力を左右に並べた早見表．
 - `poster_howto3.qmd` — `grid:` による非対称な配置．
