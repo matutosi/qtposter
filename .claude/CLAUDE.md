@@ -26,7 +26,24 @@ qtposter は Markdown の書き方を決める薄い層だけを持つ** (2026-0
 
 ### 現在の状態
 
-- 2026-08-31 09:40 (このセッション，x280-home)
+- 2026-08-31 09:20 (このセッション，MATUTOSI_DP)
+  **Quarto を 1.10.18 (Typst 0.15.1) へ上げ，`grid:` を `grid.cell` に置き換えた**
+  (ユーザ指示の3)．ギロチン分割の制限 (縦にも横にも切れ目が無い配置は組めない) は無くなった．
+  - **上げるだけでは動かなかった**．peace-of-posters 0.5.0 は Typst 0.12 で廃止された
+    `locate()` を使っており，`error: only element functions can be used as selectors` で落ちる．
+    **0.6.0 へ上げて解決**．0.6.0 では `title-box` の引数が `image:` → `logo:` に変わっている．
+  - **これで qtposter は Quarto 1.5 以降が要る** (0.6.0 も `grid.cell` も Typst 0.11 以降)．
+    **X280 の2台は 1.4 のままなので，そのままでは組めない** (次にやること に書いた)．
+  - 古いギロチン分割の経路は**消した** (0.6.0 が 1.4 で動かない以上，到達しないため)．
+    中身は git の履歴にある．
+  - **この PC の PATH はまだ 1.4** (ユーザ領域の旧版が残っている)．書籍系
+    (`write_book`・`writings`) を巻き込まないよう，PATH は動かしていない．
+    qtposter を組むときは `C:\Program Files\Quarto\bin\quarto.exe` を明示して呼ぶ．
+  - **検証**: `poster_grid.qmd`・`poster.qmd` とも 1.10 で組め，PNG に起こして目視確認
+    (配置は従来と同じ)．中間 `.typ` に `grid.cell(x:…, y:…, colspan:…, rowspan:…)` が
+    出ていることも確認．
+
+- 2026-08-31 09:40 (x280-home)
   **`grid:` (座標で配置) と `subtitle`・`logo`・`accent` に対応した** (ユーザ指示の5・6)．
   - **Quarto 1.4 が同梱する Typst は 0.10 で `grid.cell` が無い**ことが分かった
     (実機で確認．`error: function grid does not contain field cell`)．
@@ -84,6 +101,12 @@ qtposter は Markdown の書き方を決める薄い層だけを持つ** (2026-0
 座標型の poster-syndrome は v0.1.0 の単発リリースで，中身が動く学会ポスターには
 枠の手直しが残るため採らない．非対称が要る箇所は Typst 素の `grid` (`colspan`/`rowspan`) で足す．
 
+- **【2026-08-31】X280 の2台 (`x280-kwu`・`x280-home`) の Quarto を上げる**．
+  qtposter は **Quarto 1.5 以降が要る**ようになった (peace-of-posters 0.6.0 も
+  `grid.cell` も Typst 0.11 以降)．1.4 のままだと `poster.qmd` すら組めない．
+  上げ方は `winget upgrade --id Posit.Quarto` (MATUTOSI_DP では 1.10.18 が入った)．
+  **旧版がユーザ領域 (`AppData\Local\Apps\Quarto`) に残ると PATH はそちらを向く**ので，
+  `quarto --version` で確かめる (向いていなければフルパスで呼ぶか，旧版を消す)．
 - **【要判断】acposter (pandoc+Chrome) との棲み分け**．どちらを主にするかは未決．
 - **【点検 2026-08-31】acposter と比べて足りないもの** (実際に組んで確かめた．
   検証用の qmd は残していない)．

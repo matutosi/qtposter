@@ -1,5 +1,5 @@
 // qtposter: peace-of-posters を使う Quarto 用の薄いテンプレート．
-#import "@preview/peace-of-posters:0.5.0" as pop
+#import "@preview/peace-of-posters:0.6.0" as pop
 
 #let qtposter(
   title: "",
@@ -34,7 +34,7 @@
     subtitle: subtitle,
     authors: authors,
     institutes: institutes,
-    image: logo,
+    logo: logo,
   )
   columns(cols, doc)
   if footer != none { pop.bottom-box()[#footer] }
