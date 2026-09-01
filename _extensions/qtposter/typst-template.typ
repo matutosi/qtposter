@@ -13,15 +13,26 @@
     .join([・])
 }
 
+// 用紙に合った版面を選ぶ．**`paper` を受けるのに `layout-a0` 決め打ちだった** (2026-09-02 に修正)．
+// peace-of-posters の版面は表題・見出し・本文の文字寸法を用紙ごとに持っているので
+// (a0 は表題 75pt，a1 は 53pt)，A1 に a0 の版面を当てると字だけ大きいまま組まれていた．
+#let layout-for(paper) = {
+  if paper == "a1" { pop.layout-a1 }
+  else if paper == "a2" { pop.layout-a2 }
+  else if paper == "a3" { pop.layout-a3 }
+  else if paper == "a4" { pop.layout-a4 }
+  else { pop.layout-a0 }
+}
+
 #let qtposter(
   title: "",
   subtitle: none,
   authors: (),
   institutes: (),
   paper: "a0",
-  cols: 3,
   font: "Yu Gothic",
-  size: 32pt,
+  // 既定は用紙に合った本文の寸法 (a0 なら 33pt)．`font-size:` で変えられる．
+  size: none,
   footer: none,
   logo: none,
   accent: none,
@@ -34,12 +45,17 @@
   // ページの下端に別の帯として置くと，acposter・ggposter と見た目が揃わないうえ，
   // 本文の流れに置いた時期には箱が紙面いっぱいのときに帯だけが2ページ目へ溢れていた．
   // 表題帯の中なら，紙面がどれだけ詰まっても溢れない．
+  let poster-layout = layout-for(paper)
   set page(
     paper: paper,
     margin: margin,
     numbering: none,
   )
-  set text(font: font, size: size, lang: "ja")
+  set text(
+    font: font,
+    size: if size != none { size } else { poster-layout.at("body-size") },
+    lang: "ja",
+  )
 
   // **表は booktabs 調にする** (acposter・ggposter と同じ見た目)．
   // Quarto の既定は全罫線で，3系統のうち qtposter だけ見た目が違っていた．
@@ -73,7 +89,7 @@
       it
     }
   })
-  pop.set-poster-layout(pop.layout-a0)
+  pop.set-poster-layout(poster-layout)
   pop.set-theme(pop.uni-fr)
   // 差し色は見出し帯の塗りと枠だけを差し替える (uni-fr の他の設定は残す)．
   if accent != none {
