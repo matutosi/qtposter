@@ -26,7 +26,22 @@ permissions:
   contents: read
 
 jobs:
+  # Lua フィルタの単体テスト．**pandoc だけで走る** (Quarto も Typst も要らない) ので速い．
+  # 組版の前にここで書き間違いの検出を確かめておく．
+  lua:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pandoc
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y pandoc
+      - name: Run the Lua filter tests
+        shell: pwsh
+        run: pwsh -File tests/run_lua_tests.ps1
+
   build:
+    needs: lua
     strategy:
       fail-fast: false
       matrix:
@@ -61,11 +76,13 @@ jobs:
           quarto --version
           quarto typst --version
 
-      - name: Render the four samples
+      # **見本は5本すべて組む**．`poster.qmd` を外していたため，主たる見本が
+      # 一度も CI で組まれないまま，検算だけがコミット済みの古い PDF を見ていた．
+      - name: Render all samples
         shell: bash
         run: |
           set -e
-          for f in poster_howto poster_howto2 poster_howto3 golf_course; do
+          for f in poster poster_howto poster_howto2 poster_howto3 golf_course; do
             quarto render "$f.qmd" -M font:"${{ matrix.font }}"
           done
 
@@ -81,14 +98,18 @@ jobs:
             fi
             echo "OK: $pdf に '$needle' を確認"
           }
+          check poster.pdf        "Quarto + Typst"
           check poster_howto.pdf  "boxes.lua"
           check poster_howto2.pdf "format: qtposter-typst"
           check poster_howto3.pdf "grid.boxes"
           check golf_course.pdf   "grassland species richness"
 
+      # **いま組んだ PDF だけを渡す**．引数を省くと直下の PDF を全部見るので，
+      # コミット済みの古い PDF まで数に入ってしまう．
+      # 問題があれば終了コード 1 で落ちる (2026-09-02 に直した．それまでは常に緑だった)．
       - name: Check the PDFs (pages / paper size / embedded fonts)
         shell: pwsh
-        run: pwsh -File check_poster_pdf.ps1
+        run: pwsh -File check_poster_pdf.ps1 -Pdf poster.pdf,poster_howto.pdf,poster_howto2.pdf,poster_howto3.pdf,golf_course.pdf
 
       - name: Upload generated PDFs
         uses: actions/upload-artifact@v4

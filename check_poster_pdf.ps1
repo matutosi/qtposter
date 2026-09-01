@@ -16,25 +16,40 @@
   (どちらも TeX Live に同梱されている)．無ければ PDF を直接読んで数えるが，
   **Typst の PDF は圧縮されていて読み取れない**ので，その旨だけを伝える．
 
+  **問題が1つでもあれば終了コード 1 で終わる** (2026-09-02)．それまでは警告を出すだけで
+  常に 0 を返しており，CI の検算の段が**ページ数2でも緑のまま通っていた**．
+
 .EXAMPLE
   pwsh -File check_poster_pdf.ps1                       # 直下の PDF を全部見る
   pwsh -File check_poster_pdf.ps1 -Pdf poster.pdf
+  pwsh -File check_poster_pdf.ps1 -Pdf poster.pdf,golf_course.pdf
   pwsh -File check_poster_pdf.ps1 -Pdf poster.pdf -Paper a1
 #>
 [CmdletBinding()]
 param(
-  [string]$Pdf = '',
-  [ValidateSet('a0', 'a1', 'a2')][string]$Paper = 'a0'
+  # **組んだ PDF を並べて渡す**．省くと直下の PDF を全部見るが，それだと
+  # コミット済みの古い PDF まで「問題なし」と数えてしまう (CI では必ず並べて渡す)．
+  [string[]]$Pdf = @(),
+  [ValidateSet('a0', 'a1', 'a2', 'a3', 'a4')][string]$Paper = 'a0'
 )
 
 $ErrorActionPreference = 'Stop'
 
-# A系列の縦向き実寸 (mm)．qtposter は縦固定 (peace-of-posters の layout-a0)．
-$SIZE_MM = @{ a0 = @{ w = 841; h = 1189 }; a1 = @{ w = 594; h = 841 }; a2 = @{ w = 420; h = 594 } }
+# `pwsh -File` から呼ぶと引数は文字列のまま渡るので，`-Pdf a.pdf,b.pdf` が
+# 1つの文字列になる．ここでカンマで割って，どちらの呼び方でも同じにする．
+$Pdf = @($Pdf | ForEach-Object { $_ -split ',' } | Where-Object { $_ })
 
-$targets = if ($Pdf) {
-  if (-not (Test-Path $Pdf)) { throw "PDF が無い: $Pdf" }
-  @((Resolve-Path $Pdf).Path)
+# A系列の縦向き実寸 (mm)．qtposter は縦固定 (peace-of-posters の版面が縦)．
+$SIZE_MM = @{
+  a0 = @{ w = 841; h = 1189 }; a1 = @{ w = 594; h = 841 }; a2 = @{ w = 420; h = 594 }
+  a3 = @{ w = 297; h = 420 };  a4 = @{ w = 210; h = 297 }
+}
+
+$targets = if ($Pdf.Count -gt 0) {
+  @($Pdf | ForEach-Object {
+    if (-not (Test-Path $_)) { throw "PDF が無い: $_" }
+    (Resolve-Path $_).Path
+  })
 } else {
   @(Get-ChildItem -Path . -Filter '*.pdf' -File | ForEach-Object { $_.FullName })
 }
@@ -57,7 +72,9 @@ foreach ($f in $targets) {
   }
 
   $info = & $pdfinfo $f 2>$null
-  $pages = ($info | Select-String '^Pages:\s+(\d+)').Matches.Groups[1].Value
+  # Pages の行が無いとき (pdfinfo が読めなかったとき) に落ちないようにする．
+  $m = $info | Select-String '^Pages:\s+(\d+)' | Select-Object -First 1
+  $pages = if ($m) { $m.Matches[0].Groups[1].Value } else { '不明' }
   Write-Host ('ページ数: {0} (ポスターは常に1のはず)' -f $pages)
   if ($pages -ne '1') {
     $ng++
@@ -90,4 +107,10 @@ foreach ($f in $targets) {
   Write-Host ''
 }
 
-if ($ng -gt 0) { Write-Host ('検算: {0} 件の警告' -f $ng) } else { Write-Host '検算: 問題なし' }
+if ($ng -gt 0) {
+  Write-Host ('検算: {0} 件の警告' -f $ng) -ForegroundColor Red
+  exit 1
+} else {
+  Write-Host '検算: 問題なし' -ForegroundColor Green
+  exit 0
+}
