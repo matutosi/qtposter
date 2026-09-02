@@ -171,6 +171,22 @@ qtposter は Markdown の書き方を決める薄い層だけを持つ** (2026-0
 座標型の poster-syndrome は v0.1.0 の単発リリースで，中身が動く学会ポスターには
 枠の手直しが残るため採らない．非対称が要る箇所は Typst 素の `grid` (`colspan`/`rowspan`) で足す．
 
+- **【2026-09-02】和文の行またぎに空白が入る．acposter に揃える**．
+  同じ日に acposter・`build-abstract-pdf`・`build-slide-pdf` の3つで
+  **「和文が絡む境目は行末の改行を詰め，欧文どうしの境目にだけ空白を残す」**と決めた．
+  **qtposter だけこれをしていない** (`_extensions/qtposter/boxes.lua` は `SoftBreak` を
+  触っていない)．commit 済みの `poster.pdf` から抜き出すと，原稿で1文1行に書いた箇所が
+  `である． 管理の停止にともなって…` のように**空白入りで出ている**
+  (2026-09-02 に `pdftotext` で確認)．同じ原稿を3系統に渡すと出力が食い違う．
+  - 直し方は acposter の `poster.lua` の `Inlines` フィルタ (CJK_RANGES・`is_cjk`・
+    `is_transparent`・`edge_cp`) を**そのまま移す**だけ．
+    半角の丸括弧・約物は判定で読み飛ばす，欧文どうしなら空白を残す，まで同じ．
+  - **見本を組み直して確かめるには，この PC (x280-home) の Quarto の更新が先に要る**
+    (下の項)．更新できなければ，lua を直して pandoc の段階まで見て，
+    PDF の組み直しは MATUTOSI_DP に回す．
+  - **3スキル + qtposter で同じ判定のコードが重複する**ことになる (約70行 × 4)．
+    今回の穴が3か所に同時にあったのと同じ構図なので，**共有の lua に切り出すか，
+    「触ったら全部直す」と各 SKILL.md に明記するか**を決める．
 - **【2026-08-31】X280 の2台 (`x280-kwu`・`x280-home`) の Quarto を上げる**．
   qtposter は **Quarto 1.5 以降が要る**ようになった (peace-of-posters 0.6.0 も
   `grid.cell` も Typst 0.11 以降)．1.4 のままだと `poster.qmd` すら組めない．
