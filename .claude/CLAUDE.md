@@ -16,6 +16,8 @@
 | `_extensions/qtposter/` | Quarto の Typst 形式の拡張 (`_extension.yml`・`typst-template.typ`・`typst-show.typ`・`boxes.lua`) |
 | `poster.qmd` | 検証用の見本 (A0・3段・日本語) |
 | `README.md` | 使い方と書き方の約束 |
+| `tests/` | `boxes.lua` の単体テスト (`run_lua_tests.ps1`．pandoc だけで走る) |
+| `check_poster_pdf.ps1` | できた PDF の検算 (問題があれば終了コード 1) |
 | `images/` | 見本が使う仮の画像 (acposter から借用) |
 | `notes/survey_quarto_typst.md` | Quarto + Typst のポスター作例の調査・テンプレート比較・試作で踏んだ罠 (2026-08-30) |
 
@@ -26,7 +28,27 @@ qtposter は Markdown の書き方を決める薄い層だけを持つ** (2026-0
 
 ### 現在の状態
 
-- 2026-08-31 14:52 (このセッション，MATUTOSI_DP) その6
+- 2026-09-02 (このセッション，MATUTOSI_DP)
+  **ggposter・acposter と突き合わせて点検し，バグ10件を直してテストを新設した** (ユーザ指示)．
+  指摘はすべて pandoc で実際に走らせて確かめてから直した．
+  - **`tests/run_lua_tests.ps1` を新設** (acposter からの移植．40件通過)．
+    **pandoc だけで走る**ので Quarto も Typst も Chrome も要らず，X280 の2台でも走る．
+    ヘッダーの値を見るために `tests/meta_probe.tpl` を噛ませている (Typst の出力には出ないため)．
+  - **書き間違いを黙って通していた箇所を止めた**: 座標が小数だと Lua の内部エラー，
+    数値でないと黙って 0，同じ見出し名が2回あると `grid:` の経路で先の箱が黙って消える．
+    いずれも acposter では既に押さえていたもの．
+  - **見出しを `stringify` ではなく pandoc の Typst writer に書かせた**．
+    `# *Rubus* の分布` の強調が落ち，`#` は逃がされないまま渡っていた．
+  - **和文の行末の改行を詰めた** (acposter からの移植．積み残しの宿題)．
+  - **`paper:` を受けるのに版面が `layout-a0` 決め打ち**だったので a0〜a4 から選ぶようにし，
+    `quarto-required` を `>=1.5.0` に正した (1.4 では組めないのに 1.4 を許していた)．
+  - **検算が CI を落とせるようにした**．警告を出すだけで常に成功していたので，
+    ページ数が2でも緑だった．CI は単体テスト → 見本5本 (poster.qmd を含む) の順にし，
+    検算は**いま組んだ PDF だけ**に渡す (古いコミット済みの PDF を見ていた)．
+  - **検証**: 見本5本とも A0 縦・1ページ・和文フォント埋め込み．
+    A1 の原稿を別に組んで，用紙と版面が合うことも確かめた．
+
+- 2026-08-31 14:52 (MATUTOSI_DP) その6
   **表題帯を acposter に揃え，`poster_howto.qmd` を acposter と同じ箱立てにした** (ユーザ指示)．
   - **表題帯**: 中央揃えにし，著者と所属を**「氏名(所属)」の1行**にまとめた
     (`typst-template.typ` に `byline()` を足し，`typst-show.typ` は著者・所属を
@@ -171,6 +193,22 @@ qtposter は Markdown の書き方を決める薄い層だけを持つ** (2026-0
 座標型の poster-syndrome は v0.1.0 の単発リリースで，中身が動く学会ポスターには
 枠の手直しが残るため採らない．非対称が要る箇所は Typst 素の `grid` (`colspan`/`rowspan`) で足す．
 
+- **【判断待ち 2026-09-02】学名などの斜体が出ない**．2026-09-02 に見出しの強調が
+  Typst へ渡るように直したが，**組んだ PDF では斜体にならない**．
+  本文の `*Rubus palmatus*` も同じで，**太字は出るのに斜体だけ出ない**．
+  原因は `Yu Gothic` に斜体の書体が無く，Typst が他の書体で代替もしないため
+  (フィルタの側は正しく `#emph[...]` を出していることを確認済み)．
+  学名を斜体にするのは学会ポスターでは要るので，どう直すかを決める．
+  - a. 欧文だけ斜体を持つ書体に落とす (`set text(font: (欧文, 和文))`)．欧文の見た目が変わる．
+  - b. `show emph: it => box(skew(ax: -12deg, it))` で疑似斜体にする．
+  - c. 斜体は使わない (現状のまま) と決めて README に書く．
+  - **acposter・ggposter でも同じことが起きるかは未確認**．
+- **【判断待ち 2026-09-02】行末の改行の判定が4か所に重複した**
+  (`boxes.lua`・acposter の `poster.lua`・`build-abstract-pdf`・`build-slide-pdf`．約70行 × 4)．
+  今回の穴が3か所に同時にあったのと同じ構図なので，**共有の lua に切り出すか，
+  「触ったら全部直す」と各所に明記するか**を決める．
+  いまは 2026-09-02 に `boxes.lua` の当該箇所へ**「どれか1つを直したら残りも直す」と
+  書き添えただけ**で，機械的な歯止めは無い．
 - **【2026-08-31】X280 の2台 (`x280-kwu`・`x280-home`) の Quarto を上げる**．
   qtposter は **Quarto 1.5 以降が要る**ようになった (peace-of-posters 0.6.0 も
   `grid.cell` も Typst 0.11 以降)．1.4 のままだと `poster.qmd` すら組めない．
