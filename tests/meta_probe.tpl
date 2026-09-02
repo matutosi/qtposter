@@ -1,0 +1,9 @@
+META|poster-authors|$for(poster-authors)$[$poster-authors$]$endfor$
+META|institutes|$for(institutes)$[$institutes$]$endfor$
+META|footer|$footer$
+META|cols|$cols$
+META|size|$size$
+META|accent|$accent$
+META|paper|$paper$
+META|columns|$if(columns)$SET$else$NONE$endif$
+$body$

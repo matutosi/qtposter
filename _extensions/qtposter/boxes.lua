@@ -1,8 +1,31 @@
 -- `# 見出し` から次の `# 見出し` までを1つの箱 (pop.column-box) にまとめる．
 -- acposter の「# 見出し = 箱」の約束と同じにして，書き方を揃える．
-local function esc(s)
-  local BS = string.char(92)
-  return (s:gsub(BS, BS..BS):gsub("%[", BS.."["):gsub("%]", BS.."]"))
+
+-- 見出しの中身を Typst の記法へ書き出す．
+-- **`stringify` で文字列にしてはいけない** (2026-09-02)．それまでは
+-- `# *Rubus* の分布` の斜体が落ちて立体になり (学名はポスターで斜体が要る)，
+-- 逆に `# #1 の話` の `#` は逃がされないまま Typst のコード開始として渡っていた．
+-- pandoc の Typst writer に書かせれば，強調は残り，記号は writer が逃がす．
+-- `wrap_text = 'none'` は，長い見出しが途中で折り返されて改行が混じるのを防ぐため．
+local WOPTS = pandoc.WriterOptions({ wrap_text = 'none' })
+local function heading_typst(inlines)
+  local s = pandoc.write(pandoc.Pandoc({ pandoc.Plain(inlines) }), 'typst', WOPTS)
+  return (s:gsub('%s+$', ''))
+end
+
+-- ヘッダーの値を整数へ (無ければ既定値)．
+-- **書き間違いを黙って既定値に落とさない** (2026-09-02．acposter の `to_num` と同じ)．
+-- それまでは `x: 0.9` が `grid.cell` の書き出しで Lua の内部エラー
+-- (`number has no integer representation`) になり，`x: なにか` は警告も出ないまま
+-- 既定値の 0 として別の場所へ置かれていた．
+local function to_num(v, default, what)
+  if v == nil then return default end
+  local s = pandoc.utils.stringify(v)
+  local n = tonumber(s)
+  if n == nil or n ~= math.floor(n) then
+    error(('%s は整数で書く (今は "%s")．'):format(what, s))
+  end
+  return math.floor(n)
 end
 
 -- Quarto は幅の指定が無い画像を `#box(width: 900.0pt, image(...))` のように
@@ -29,6 +52,84 @@ function Link(el)
     return img
   end
   return nil
+end
+
+-- ---------------------------------------------------------------------------
+-- 行末の改行 (SoftBreak) の詰め方．**和文が絡む境目は詰め，欧文どうしの境目にだけ空白を残す**．
+-- 無条件に空白を残すと，1文1行で書いた和文が「である． 管理の停止に…」と間延びし，
+-- 無条件に落とすと，1文1行で書いた英文が単語ごとくっつく ("plants,to clarify")．
+-- 2026-09-02 まで qtposter だけこの処理が無く，`poster.pdf` に実際に空白が出ていた．
+--
+-- **ここは acposter の `poster.lua`・スキル `build-abstract-pdf`・`build-slide-pdf` と
+-- 同じ判定の写しである** (CJK_RANGES / is_cjk / is_transparent / edge_cp / Inlines)．
+-- **どれか1つを直したら，残りも同じに直す**．
+-- ---------------------------------------------------------------------------
+local CJK_RANGES = {
+  { 0x3000, 0x303F },   -- CJK の約物 (、。「」)
+  { 0x3040, 0x30FF },   -- ひらがな・カタカナ (・ を含む)
+  { 0x31F0, 0x31FF },   -- カタカナ拡張
+  { 0x3400, 0x4DBF },   -- 漢字 拡張A
+  { 0x4E00, 0x9FFF },   -- 漢字
+  { 0xF900, 0xFAFF },   -- 互換漢字
+  { 0xFF00, 0xFF60 },   -- 全角の英数・約物 (，．()「」)
+  { 0xFFE0, 0xFFE6 },   -- 全角の記号
+}
+
+local function is_cjk(cp)
+  if cp == nil then return false end
+  for _, r in ipairs(CJK_RANGES) do
+    if cp >= r[1] and cp <= r[2] then return true end
+  end
+  return false
+end
+
+-- 半角の約物・空白は「透ける」ものとして飛ばす．和文でも丸括弧・記号は半角で書くので
+-- (ユーザの表記ルール)，`…と)` の `)` だけを見て「和文ではない」と判じないため．
+-- 欧文で飛ばしても，その奥に出てくるのはラテン文字なので判定は変わらない．
+local function is_transparent(cp)
+  return cp == 0x20 or cp == 0x09
+      or (cp >= 0x21 and cp <= 0x2F) or (cp >= 0x3A and cp <= 0x40)
+      or (cp >= 0x5B and cp <= 0x60) or (cp >= 0x7B and cp <= 0x7E)
+end
+
+-- 隣の要素の「境目の文字」の符号位置を返す (last なら末尾から，そうでなければ先頭から)．
+-- Emph や Code に包まれていても中の文字が見えるよう stringify を通す．
+local function edge_cp(il, last)
+  if il == nil then return nil end
+  local ok, s = pcall(pandoc.utils.stringify, il)
+  if not ok or s == nil or s == '' then return nil end
+  local cps = {}
+  for _, c in utf8.codes(s) do cps[#cps + 1] = c end
+  local from, to, step = 1, #cps, 1
+  if last then from, to, step = #cps, 1, -1 end
+  for i = from, to, step do
+    if not is_transparent(cps[i]) then return cps[i] end
+  end
+  return nil
+end
+
+function Inlines(ils)
+  local has_softbreak = false
+  for _, il in ipairs(ils) do
+    if il.t == 'SoftBreak' then has_softbreak = true; break end
+  end
+  if not has_softbreak then return nil end
+
+  local out = pandoc.Inlines({})
+  for i, il in ipairs(ils) do
+    if il.t == 'SoftBreak' then
+      -- **どちらか一方でも和文なら詰める**．空白を入れるのは両側とも欧文のときだけ
+      -- (pandoc の既定の書き出しと同じ振る舞い)．和文と欧文の境目は，和文の組版では
+      -- 空白を置かない．「ともに和文のときだけ詰める」にすると，
+      -- 「…である．⏎2025年には…」が「である． 2025年」になってしまう．
+      if not (is_cjk(edge_cp(ils[i - 1], true)) or is_cjk(edge_cp(ils[i + 1], false))) then
+        out:insert(pandoc.Space())
+      end
+    else
+      out:insert(il)
+    end
+  end
+  return out
 end
 
 -- 姉妹ツール (ggposter・acposter) が同じ意味に使っているキー名も受ける．
@@ -98,14 +199,8 @@ end
 -- **その版でしか動かない**古い経路は消した (中身は git の履歴にある)．
 -- ---------------------------------------------------------------------------
 
-local function num(v, default)
-  if v == nil then return default end
-  local n = tonumber(pandoc.utils.stringify(v))
-  return n or default
-end
-
 local function read_grid(meta_grid)
-  local cols = num(meta_grid.columns, 2)
+  local cols = to_num(meta_grid.columns, 2, 'grid.columns')
   if cols < 1 then error('grid.columns は 1 以上にする．') end
   local boxes = {}
   if meta_grid.boxes == nil then error('grid: に boxes が無い．') end
@@ -114,8 +209,10 @@ local function read_grid(meta_grid)
     if name == '' then error('grid.boxes の各要素には name が要る．') end
     local box = {
       name = name,
-      x = num(b.x, 0), y = num(b.y, 0),
-      w = num(b.w, 1), h = num(b.h, 1),
+      x = to_num(b.x, 0, ("grid.boxes の '" .. name .. "' の x")),
+      y = to_num(b.y, 0, ("grid.boxes の '" .. name .. "' の y")),
+      w = to_num(b.w, 1, ("grid.boxes の '" .. name .. "' の w")),
+      h = to_num(b.h, 1, ("grid.boxes の '" .. name .. "' の h")),
     }
     if box.x < 0 or box.y < 0 then
       error("grid.boxes の '" .. name .. "' の x/y は 0 以上にする．")
@@ -153,12 +250,19 @@ local function split_into_boxes(blocks)
   local cur = nil
   for _, blk in ipairs(blocks) do
     if blk.t == "Header" and blk.level == 1 then
-      cur = { name = pandoc.utils.stringify(blk.content),
+      local name = pandoc.utils.stringify(blk.content)
+      -- **同じ見出し名は許さない** (2026-09-02)．箱は名前で引くので，2回書くと
+      -- `grid:` の経路で先の箱の中身が黙って消えていた (acposter は元から止まる)．
+      if content[name] then
+        error("本文に `# " .. name .. "` が2回出てくる．見出しは1回ずつにする．")
+      end
+      cur = { name = name,
+              heading = heading_typst(blk.content),
               broken = blk.classes:includes("break"),
               full = blk.classes:includes("full"),
               blocks = pandoc.List() }
       order[#order + 1] = cur
-      content[cur.name] = cur
+      content[name] = cur
     elseif cur then
       cur.blocks:insert(blk)
     else
@@ -171,7 +275,7 @@ end
 local function raw(s) return pandoc.RawBlock("typst", s) end
 
 local function emit_box(out, item)
-  out:insert(raw('#pop.column-box(heading: [' .. esc(item.name) .. '])['))
+  out:insert(raw('#pop.column-box(heading: [' .. item.heading .. '])['))
   for _, b in ipairs(item.blocks) do out:insert(b) end
   out:insert(raw(']'))
 end
@@ -218,6 +322,10 @@ function Pandoc(doc)
         io.stderr:write("[warning] grid: を使うときは {.break} は効かない (" ..
                         item.name .. ")．配置は grid: が決める．\n")
       end
+      if item.full then
+        io.stderr:write("[warning] grid: を使うときは {.full} は効かない (" ..
+                        item.name .. ")．全幅にするには w を columns と同じにする．\n")
+      end
     end
 
     emit_grid_cells(out, boxes, content, cols)
@@ -228,11 +336,8 @@ function Pandoc(doc)
     -- そのあと段組みを開き直す** (acposter の `{.full}` と同じ約束)．
     -- Typst の `columns()` は入れ子にできるが「途中で1つだけ全幅」は書けないので，
     -- 段組みの塊を切って間に挟む形にする．
-    local cols = 3
-    if doc.meta.cols ~= nil then
-      cols = math.floor(tonumber(pandoc.utils.stringify(doc.meta.cols)) or 3)
-      if cols < 1 then cols = 1 end
-    end
+    local cols = to_num(doc.meta.cols, 3, 'columns (段数)')
+    if cols < 1 then error('columns (段数) は 1 以上にする．') end
 
     local open = false            -- いま段組みの塊を開いているか
     local function open_columns()

@@ -1,7 +1,10 @@
 title: qtposter
 author: Toshikazu Matsumura
-version: 0.1.0
-quarto-required: ">=1.4.0"
+version: 0.2.0
+# peace-of-posters 0.6.0 も `grid.cell` も Typst 0.11 以降が要る．
+# Quarto 1.4 が同梱する Typst は 0.10 なので，そちらでは組めない (2026-08-31 に実機で確認)．
+# **`>=1.4.0` のままだと，1.4 の利用者が Typst の意味の分からないエラーで止まる**．
+quarto-required: ">=1.5.0"
 contributes:
   formats:
     typst:

@@ -13,7 +13,7 @@ README の項目と順序は3つで揃えてある．
 
 ## つくれるもの
 
-- 用紙: A0 (縦．**向きは変えられない**)
+- 用紙: A0 (既定)．`paper:` で A1〜A4 にもできる (**縦のみ．向きは変えられない**)
 - `# 見出し` ごとに1つの箱 (peace-of-posters の `column-box`)
 - 既定は段組みの流し込み．段の切れ目は `# 見出し {.break}`，全幅の箱は `# 見出し {.full}`
 - ヘッダーに `grid:` (各箱の `x`/`y`/`w`/`h` 座標) を書けば非対称な配置にできる
@@ -42,10 +42,10 @@ title: "半自然草原の植生と管理"
 subtitle: "管理の頻度と種組成"   # 省略可
 author: ["松村 俊和"]
 institute: "所属機関名"
-paper: "a0"      # 用紙
+paper: "a0"      # 用紙 (a0〜a4．版面の文字寸法も用紙に合わせて変わる)
 columns: 3       # 段数
 font: "Yu Gothic"
-font-size: 32pt
+font-size: 32pt  # 省略すると用紙に合った既定 (a0 なら 33pt)
 note: "植生学会第30回大会"   # 表題帯の下端に小さく入る
 logo: images/logo.png    # 省略可．表題帯の右に入る
 accent: "#1a7a3c"        # 省略可．見出し帯の色 (既定は uni-fr の紺)
@@ -59,7 +59,13 @@ format: qtposter-typst
 ```powershell
 pwsh -File check_poster_pdf.ps1              # 直下の PDF を全部見る
 pwsh -File check_poster_pdf.ps1 -Pdf poster.pdf
+pwsh -File check_poster_pdf.ps1 -Pdf poster.pdf,golf_course.pdf   # 組んだものだけ見る
+pwsh -File check_poster_pdf.ps1 -Pdf poster.pdf -Paper a1
 ```
+
+**問題が1つでもあれば終了コード 1 で終わる**ので，そのまま CI に置ける．
+組んだ直後に確かめるときは，**組んだ PDF を並べて渡す** (引数を省くと直下の PDF を
+全部見るので，古い PDF まで数に入る)．
 
 中間の Typst を見たいときは `_extensions/qtposter/_extension.yml` に
 `keep-typ: true` を足す (acposter の `-KeepHtml` にあたる)．
@@ -67,6 +73,8 @@ pwsh -File check_poster_pdf.ps1 -Pdf poster.pdf
 ## 書き方の約束
 
 - **`# 見出し` が1つの箱**になる (acposter と同じ約束)．
+  **見出しの中でも Markdown が使える** (`# *Rubus* の分布` の強調は Typst へそのまま渡る)．
+  **同じ見出し名を2回書くとエラーで止まる** (箱は名前で引くため)．
 - **`# 見出し {.break}` と書くと，その箱から次の段へ送る**．
   Typst の `columns` は「あふれたら次の段」なので，**A0 では自動で分かれない**．
   段の切れ目は書き手が決める．
@@ -83,6 +91,9 @@ pwsh -File check_poster_pdf.ps1 -Pdf poster.pdf
   (**画像どうしは空行で区切る**)．
 - **`!` の付け忘れは救済する**．`[説明](図.png)` のように書いても，拡張子が画像なら
   画像として組む (正しくは `![...]`)．acposter と同じ約束．
+- **和文の行末の改行は詰める**．1文1行で書いてよい．
+  空白が残るのは**欧文どうしの境目だけ** (`plants,` と `to clarify` は離れたまま)．
+  acposter・`build-abstract-pdf`・`build-slide-pdf` と同じ判定．
 - 表・箇条書き・コードブロックはふつうの Markdown．
 
 ## 配置の決め方
@@ -108,7 +119,9 @@ validate-yaml: false
   なので，これを付けないと Quarto の YAML 検証がフィルタより先に弾く．
   **キー名を変えると3つのツールで揃わなくなる**ので，検証を切るほうを採った．
 - 重なり・右へのはみ出し・本文の見出しとの食い違いは**名指しでエラーにして止める**．
-- `{.break}` は `grid:` を使うときは効かない (配置は `grid:` が決める)．警告が出る．
+- `{.break}`・`{.full}` は `grid:` を使うときは効かない (配置は `grid:` が決める)．警告が出る．
+- `x`・`y`・`w`・`h`・`columns` は**整数で書く**．小数や数値でない値は**エラーで止まる**
+  (黙って既定値に落とすと，書き間違いに気づけないまま別の場所へ置かれる)．
 - **仕組み**: 座標をそのまま Typst の `grid.cell(x:, y:, colspan:, rowspan:)` に
   渡すだけなので，**組めない配置は無い**．2026-08-31 まではギロチン分割
   (箱をまたがない切れ目で再帰的に割る) で代用しており，縦にも横にも切れ目が無い
@@ -150,7 +163,7 @@ quarto render poster_howto.qmd
 | 著者 | `author` | `authors`・`poster-authors` |
 | 所属 | `institute` | `institutes`・`affiliation`・`affiliations` |
 | 注記 | `note` | `funding`・`footer` |
-| 用紙 | `paper` | (無し) |
+| 用紙 | `paper` | (無し)．`a0`〜`a4` |
 | 段数 | `columns` | `cols` |
 | 文字サイズ | `font-size` | `font_size`・`size` |
 | 書体 | `font` | (無し) |
@@ -159,7 +172,7 @@ quarto render poster_howto.qmd
 
 - **`size` を正にしない**のは，ggposter が `size` を**用紙**の意味で使っているため．
   qtposter が元から使っていた `size` (文字サイズ) は別名として引き続き通る．
-- **`orientation` は受けない**．peace-of-posters の `layout-a0` が縦で固定なうえ，
+- **`orientation` は受けない**．peace-of-posters の版面が縦で固定なうえ，
   Quarto 自身が予約していて (値は `rows`/`columns`)，`landscape` と書くと
   Quarto の YAML 検証がフィルタより先に弾く．
 - **`columns` は Quarto 自身も使う**ので，フィルタが読み替えたあと消している
@@ -177,11 +190,27 @@ quarto render poster_howto.qmd
 | `poster.qmd` | 最小の見本 (段組みの流し込み) |
 | `poster_howto.qmd`・`poster_howto2.qmd`・`poster_howto3.qmd`・`golf_course.qmd` | 見本4本と，その PDF |
 | `check_poster_pdf.ps1` | できた PDF の検算 (ページ数・用紙実寸・埋め込みフォント) |
+| `tests/run_lua_tests.ps1` | `boxes.lua` の単体テスト (**pandoc だけで走る**) |
+| `tests/meta_probe.tpl` | テストがヘッダーの値を見るための小さな pandoc テンプレート |
 | `images/` | 見本が使う仮の画像 |
 | `previews/` | README に載せる見本の縮小画像 (PDF から `pdftoppm -r 18` で作る) |
 | `notes/` | 調査の記録 (Quarto + Typst のポスター作例・試作で踏んだ罠) |
-| `.github/workflows/test.yml` | CI (Ubuntu・macOS で見本4本を組み，中身と検算まで確かめる) |
+| `.github/workflows/test.yml` | CI (単体テスト → Ubuntu・macOS で見本5本を組み，中身と検算まで確かめる) |
 | `LICENSE` | MIT |
+
+## テスト
+
+`boxes.lua` の単体テストは **pandoc だけで走る** (Quarto も Typst も Chrome も要らない)．
+小さな md を通して，出てきた Typst と，エラー・警告の文面を確かめる．
+見るのは「組めるか」ではなく「**書き間違いを黙って通さないか**」．
+
+```powershell
+pwsh -File tests/run_lua_tests.ps1
+```
+
+CI は**この単体テストが通ってから**，Ubuntu と macOS で見本5本を組み，
+`pdftotext` で中身を確かめ，`check_poster_pdf.ps1` で検算する
+(**和文は `pdftotext` で抜き出せない**ので，目印には欧文を使う)．
 
 ## 現状と経緯
 
